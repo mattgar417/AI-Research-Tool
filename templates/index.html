@@ -1,39 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>YOLO Research Paper Analyzer</title>
-    <style>
-        body { font-family: Arial; padding: 20px; }
-        img { max-width: 500px; margin: 20px 0; }
-        .box { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
-    </style>
+    <title>YOLO Research Analyzer</title>
 </head>
 <body>
-    <h1>Upload an Image to Analyze</h1>
+    <h1>Upload Image for YOLO Analysis</h1>
     <form method="POST" enctype="multipart/form-data">
         <input type="file" name="file" accept="image/*" required>
-        <button type="submit">Upload & Analyze</button>
+        <button type="submit">Analyze</button>
     </form>
 
-    {% if image_path %}
+    {% if image_url %}
         <h2>Uploaded Image</h2>
-        <img src="{{ image_path }}" alt="Uploaded Image">
+        <img src="{{ image_url }}" width="500">
+        <p><a href="{{ image_url }}" target="_blank">[View in GCS]</a></p>
     {% endif %}
 
     {% if results %}
         <h2>Detected Elements</h2>
-        {% for label, text in results %}
-            <div class="box">
-                <strong>Label:</strong> {{ label }}<br>
-                {% if text %}
-                    <strong>Extracted Text:</strong><br>
-                    <pre>{{ text }}</pre>
-                {% else %}
-                    <em>No text extracted.</em>
-                {% endif %}
+        {% for r in results %}
+            <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                <strong>{{ r.label }}</strong> (Confidence: {{ r.confidence }})<br>
+                <pre>{{ r.text or "(No text extracted)" }}</pre>
             </div>
         {% endfor %}
+    {% endif %}
+
+    {% if csv_url %}
+        <h2>Download Results</h2>
+        <a href="{{ csv_url }}" target="_blank">Download CSV from GCS</a>
     {% endif %}
 </body>
 </html>
