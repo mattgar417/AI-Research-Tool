@@ -1,3 +1,4 @@
+from flask import Flask, render_template, request, redirect
 import cv2
 import pytesseract
 from ultralytics import YOLO
@@ -48,16 +49,20 @@ def process_pdf(file_path):
     
     return extracted_data
 
-# Path to research paper PDF
-pdf_path = "research_paper.pdf"
-data = process_pdf(pdf_path)
+@app.route("/", methods=["GET", "POST"])
+def index():
+    results = []
+    image_path = None
 
-# Analyze or save extracted data
-for page_idx, page_content in enumerate(data):
-    print(f"\n--- Page {page_idx + 1} ---")
-    for element in page_content:
-        label, content = element
-        if isinstance(content, str):
-            print(f"[{label}] Text: {content[:100]}...")  # Print first 100 characters
-        else:
-            print(f"[{label}] Image detected")
+    if request.method == "POST":
+        file = request.files["file"]
+        if file:
+            filename = file.filename
+            image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(image_path)
+            results = extract_data_from_image(image_path)
+
+    return render_template("index.html", results=results, image_path=image_path)
+
+if __name__ == "__main__":
+    app.run(debug=True)
