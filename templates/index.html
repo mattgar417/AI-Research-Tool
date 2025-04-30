@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YOLO Research Paper Analyzer</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        img { max-width: 500px; margin: 20px 0; }
+        .box { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Upload an Image to Analyze</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <button type="submit">Upload & Analyze</button>
+    </form>
+
+    {% if image_path %}
+        <h2>Uploaded Image</h2>
+        <img src="{{ image_path }}" alt="Uploaded Image">
+    {% endif %}
+
+    {% if results %}
+        <h2>Detected Elements</h2>
+        {% for label, text in results %}
+            <div class="box">
+                <strong>Label:</strong> {{ label }}<br>
+                {% if text %}
+                    <strong>Extracted Text:</strong><br>
+                    <pre>{{ text }}</pre>
+                {% else %}
+                    <em>No text extracted.</em>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</body>
+</html>
