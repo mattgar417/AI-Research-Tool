@@ -4,6 +4,13 @@ import pytesseract
 from ultralytics import YOLO
 from pdf2image import convert_from_path
 
+app.config["UPLOAD_FOLDER"] = "static/uploads"
+app.config["CSV_FOLDER"] = "static/csv"
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+os.makedirs(app.config["CSV_FOLDER"], exist_ok=True)
+
+GCS_BUCKET = "research_tool_bucket1"  # replace with your bucket name
+
 # Load YOLO model
 model = YOLO("yolov5s.pt")  # Change to path of your custom-trained weights if available
 
@@ -35,19 +42,20 @@ def extract_data_from_image(img_path):
 
     return detected_elements
 
-def process_pdf(file_path):
-    # Convert PDF pages to images
-    pages = convert_from_path(file_path, 300)
-    extracted_data = []
+def save_csv(data, filename):
+    path = os.path.join(app.config["CSV_FOLDER"], filename)
+    with open(path, "w", newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=["label", "confidence", "text"])
+        writer.writeheader()
+        writer.writerows(data)
+    return path
 
-    # Process each page
-    for i, page in enumerate(pages):
-        img_path = f"page_{i}.jpg"
-        page.save(img_path, "JPEG")
-        page_data = extract_data_from_image(img_path)
-        extracted_data.append(page_data)
-    
-    return extracted_data
+def upload_to_gcs(local_file_path, gcs_path):
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET)
+    blob = bucket.blob(gcs_path)
+    blob.upload_from_filename(local_file_path)
+    return f"https://storage.googleapis.com/{GCS_BUCKET}/{gcs_path}"
 
 @app.route("/", methods=["GET", "POST"])
 def index():
