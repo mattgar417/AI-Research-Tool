@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Extraction Results</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+</head>
+<body>
+  <main class="container">
+    <a href="{{ url_for('index') }}" class="back-link">← Back</a>
+    <h1>Extraction Results</h1>
+
+    <section class="summary">
+      <h2>Paper summary</h2>
+      <pre class="summary-box">{{ summary }}</pre>
+    </section>
+
+    <section class="figures">
+      <h2>Figures</h2>
+      {% if figures %}
+        <div class="figure-grid">
+          {% for fig in figures %}
+            {% set filename = fig['path'].split('/')[-1].split('\\')[-1] %}
+            <div class="figure-card">
+              <a target="_blank" href="{{ url_for('static', filename=web_output_dir + '/' + filename) }}">
+                <img src="{{ url_for('static', filename=web_output_dir + '/' + filename) }}" alt="figure" />
+              </a>
+              <p class="caption">{{ fig['caption'] }}</p>
+              <a class="download-small" href="{{ url_for('static', filename=web_output_dir + '/' + filename) }}" download>Download</a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No figures detected.</p>
+      {% endif %}
+    </section>
+
+    <section class="tables">
+      <h2>Extracted tables (CSV)</h2>
+      {% if tables %}
+        <ul class="table-list">
+          {% for csv_path in tables %}
+            {% set fname = csv_path.split('/')[-1].split('\\')[-1] %}
+            <li>
+              <a href="{{ url_for('static', filename=web_output_dir + '/' + fname) }}" target="_blank">{{ fname }}</a>
+              <a class="download-small" href="{{ url_for('static', filename=web_output_dir + '/' + fname) }}" download>Download</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No tables extracted.</p>
+      {% endif %}
+    </section>
+
+    <div class="actions-row">
+      <a class="btn" href="{{ url_for('download', dir_name=dir_name) }}">Download all (ZIP)</a>
+      <a class="btn btn-secondary" href="{{ url_for('index') }}">Process another PDF</a>
+    </div>
+
+    <footer>
+      <small>Output folder: <code>{{ web_output_dir }}</code></small>
+    </footer>
+  </main>
+</body>
+</html>

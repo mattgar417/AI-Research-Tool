@@ -1,34 +1,26 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>YOLO Research Analyzer</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Research Paper Extractor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
 </head>
 <body>
-    <h1>Upload Image for YOLO Analysis</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" accept="image/*" required>
-        <button type="submit">Analyze</button>
+  <main class="container">
+    <h1>Research Paper Extractor</h1>
+    <p>Upload a PDF and this tool will extract tables (CSV), figures (JPEG), captions, and a summary.</p>
+
+    <form method="post" enctype="multipart/form-data">
+      <label class="file-label">
+        Choose PDF
+        <input type="file" name="file" accept="application/pdf" required>
+      </label>
+
+      <div class="submit-row">
+        <button type="submit" class="btn">Upload & Process</button>
+      </div>
     </form>
-
-    {% if image_url %}
-        <h2>Uploaded Image</h2>
-        <img src="{{ image_url }}" width="500">
-        <p><a href="{{ image_url }}" target="_blank">[View in GCS]</a></p>
-    {% endif %}
-
-    {% if results %}
-        <h2>Detected Elements</h2>
-        {% for r in results %}
-            <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
-                <strong>{{ r.label }}</strong> (Confidence: {{ r.confidence }})<br>
-                <pre>{{ r.text or "(No text extracted)" }}</pre>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    {% if csv_url %}
-        <h2>Download Results</h2>
-        <a href="{{ csv_url }}" target="_blank">Download CSV from GCS</a>
-    {% endif %}
+  </main>
 </body>
 </html>
