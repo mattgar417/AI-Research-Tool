@@ -1,76 +1,60 @@
-from flask import Flask, render_template, request, redirect
-import cv2
-import pytesseract
-from ultralytics import YOLO
-from pdf2image import convert_from_path
+from flask import Flask, render_template, request, send_file, abort
+import os, shutil, tempfile
+from datetime import datetime
+from processor import extract_data_from_pdf, extract_tables_from_pdf
 
+app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "static/uploads"
-app.config["CSV_FOLDER"] = "static/csv"
+app.config["OUTPUT_FOLDER"] = "static/outputs"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-os.makedirs(app.config["CSV_FOLDER"], exist_ok=True)
-
-GCS_BUCKET = "research_tool_bucket1"  # replace with your bucket name
-
-# Load YOLO model
-model = YOLO("yolov5s.pt")  # Change to path of your custom-trained weights if available
-
-def extract_data_from_image(img_path):
-    # Read the image
-    img = cv2.imread(img_path)
-    
-    # Perform YOLO object detection
-    results = model(img)
-
-    # Initialize lists for detected elements
-    detected_elements = []
-
-    # Iterate over detections
-    for result in results:
-        for detection in result.boxes:
-            x1, y1, x2, y2, confidence, cls = detection.xyxy[0]  # Bounding box coordinates
-            label = model.names[int(cls)]  # Class name
-            
-            # Crop the detected area
-            cropped_img = img[int(y1):int(y2), int(x1):int(x2)]
-            
-            # OCR to extract text if it's a text-based area
-            if label in ["table", "figure", "text"]:  # Adjust labels as needed
-                text = pytesseract.image_to_string(cropped_img)
-                detected_elements.append((label, text))
-            else:
-                detected_elements.append((label, cropped_img))  # For non-text data
-
-    return detected_elements
-
-def save_csv(data, filename):
-    path = os.path.join(app.config["CSV_FOLDER"], filename)
-    with open(path, "w", newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=["label", "confidence", "text"])
-        writer.writeheader()
-        writer.writerows(data)
-    return path
-
-def upload_to_gcs(local_file_path, gcs_path):
-    client = storage.Client()
-    bucket = client.bucket(GCS_BUCKET)
-    blob = bucket.blob(gcs_path)
-    blob.upload_from_filename(local_file_path)
-    return f"https://storage.googleapis.com/{GCS_BUCKET}/{gcs_path}"
+os.makedirs(app.config["OUTPUT_FOLDER"], exist_ok=True)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    results = []
-    image_path = None
-
     if request.method == "POST":
         file = request.files["file"]
-        if file:
-            filename = file.filename
-            image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            file.save(image_path)
-            results = extract_data_from_image(image_path)
+        if file and file.filename.endswith(".pdf"):
+            filename = os.path.splitext(file.filename)[0]
+            upload_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+            file.save(upload_path)
 
-    return render_template("index.html", results=results, image_path=image_path)
+            # create output folder
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_dir = os.path.join(app.config["OUTPUT_FOLDER"], f"{filename}_{timestamp}")
+            os.makedirs(output_dir, exist_ok=True)
+
+            # Run processing pipeline
+            tables = extract_tables_from_pdf(upload_path, output_dir)
+            data = extract_data_from_pdf(upload_path, output_dir)
+
+            # Prepare for template
+            web_output_dir = os.path.relpath(output_dir, start="static").replace("\\", "/")
+            dir_name = os.path.basename(output_dir)
+
+            return render_template(
+                "results.html",
+                figures=data["figures"],
+                summary=data["summary"],
+                tables=tables,
+                output_dir=output_dir,
+                web_output_dir=web_output_dir,
+                dir_name=dir_name,
+            )
+    return render_template("index.html")
+
+
+@app.route("/download/<dir_name>")
+def download(dir_name):
+    """Serve all extracted files as a ZIP archive."""
+    dir_path = os.path.join(app.config["OUTPUT_FOLDER"], dir_name)
+    if not os.path.exists(dir_path):
+        abort(404)
+
+    tmpdir = tempfile.mkdtemp()
+    archive_base = os.path.join(tmpdir, "archive")
+    zip_path = shutil.make_archive(archive_base, "zip", dir_path)
+    return send_file(zip_path, as_attachment=True, download_name=f"{dir_name}.zip")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
