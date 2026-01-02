@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, send_file, abort
 import os, shutil, tempfile
 from datetime import datetime
-from processor import extract_data_from_pdf, extract_tables_from_pdf
+from tools import extract_data_from_pdf, extract_tables_from_pdf
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "static/uploads"
@@ -57,4 +57,5 @@ def download(dir_name):
 
 
 if __name__ == "__main__":
+
     app.run(debug=True)
