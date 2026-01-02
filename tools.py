@@ -69,11 +69,12 @@ def extract_data_from_pdf(pdf_path, output_dir):
                 elif label == "text":
                     all_text += pytesseract.image_to_string(cropped) + "\n"
 
-    summary = summarize_text(all_text)
+    summary = summarize_text(pdf_path)
     with open(os.path.join(output_dir, "summary.txt"), "w", encoding="utf-8") as f:
         f.write(summary)
         f.write("\n\n--- FIGURE CAPTIONS ---\n")
         for fig in figures:
             f.write(f"{fig['path']}: {fig['caption']}\n")
+
 
     return {"figures": figures, "summary": summary}
