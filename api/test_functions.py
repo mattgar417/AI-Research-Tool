@@ -1,35 +1,30 @@
 import os
-from api.app import (
-    summarize_text,
-    generate_caption,
-    extract_tables_from_pdf,
-    extract_data_from_pdf
-)
+from ml.tools import text_analysis, table_analysis, figure_analysis, compare_papers, entity_recognition
 
 # Paths to test files
 PDF_PATH = "test_samples/paper.pdf"
+PDF_PATH1 = "test_samples/paper1.pdf"
 IMG_PATH = "test_samples/figure1.png"
 OUTPUT_DIR = "test_outputs"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-print("\nTesting summarize_text()...")
-summary = summarize_text(PDF_PATH)
+print("\nTesting text analysis...")
+summary = text_analysis(PDF_PATH, OUTPUT_DIR, "Summarize the text of this paper")
 print("Summary:\n", summary[:500], "...\n")
 
-print("\nTesting generate_caption()...")
-caption = generate_caption(IMG_PATH)
-print("Caption:\n", caption, "\n")
+print("\nTesting table analysis...")
+summary = table_analysis(PDF_PATH, OUTPUT_DIR, "Summarize the tables of this paper")
+print("Summary:\n", summary[:500], "\n")
 
-print("\nTesting extract_tables_from_pdf()...")
-tables = extract_tables_from_pdf(PDF_PATH, OUTPUT_DIR)
-print(f"Extracted {len(tables)} tables.")
-for t in tables:
-    print(" -", t)
+print("\nTesting figure analysis...")
+summary = figure_analysis(PDF_PATH, OUTPUT_DIR, "Summarize the figures of this paper")
+print("Summary:\n", summary[:500], "\n")
 
-print("\nTesting extract_data_from_pdf()...")
-results = extract_data_from_pdf(PDF_PATH, OUTPUT_DIR)
-print("Summary length:", len(results['summary']))
-print("Detected figures:", len(results['figures']))
-for fig in results["figures"]:
-    print(" -", fig["path"], "| Caption:", fig["caption"][:80])
+print("\nTesting paper comparison...")
+summary = compare_papers(PDF_PATH, PDF_PATH1, OUTPUT_DIR)
+print("Summary:\n", summary[:500], "\n")
+
+print("\nTesting named entity recognition...")
+summary = table_analysis(PDF_PATH, OUTPUT_DIR, "Summarize the figures of this paper")
+print("Summary:\n", summary[:500], "\n")
